@@ -28,8 +28,8 @@ seendID = bytearray(256)
 
 finalNode = b'\xab'
 origNode = b'\xaa'
-noSatAck = b'\xbb' #  This could be changed with a flag, learn how to do this :). Maybe look at send_with_ack in library to see how to edit flags
-yesSatAck = b'xaa'
+noSatAck = b'\x00' #  This could be changed with a flag, learn how to do this :). Maybe look at send_with_ack in library to see how to edit flags
+yesSatAck = b'\xaa'
 
 seen = False
 
@@ -40,8 +40,8 @@ while True:
     if response is not None:
         print("Received (raw header):", [hex(x) for x in response[0:4]])
         print("Received (raw header):", response[0:4])
-        print("Received (raw payload): {0}".format(response[4:]))
-        print("Received (raw bytes): {0}".format(response))
+        #print("Received (raw payload): {0}".format(response[4:]))
+        #print("Received (raw bytes): {0}".format(response))
 
         for ID in seendID:
             if response[2:3] == ID: # we have seen this message
@@ -53,6 +53,7 @@ while True:
             if response[4:5] == origNode:
                 print("meant for this!")
                 finalMessage = finalNode + origNode + yesSatAck
+                count = response[2]
+                print("Sending ack back")
+                print(count)
                 radio.send(finalMessage, identifier = count, destination=255, keep_listening=True)
-
-

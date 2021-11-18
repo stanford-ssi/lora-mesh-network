@@ -31,8 +31,8 @@ seendID = bytearray(256)
 #  finalNode = input("Node destination: ")
 finalNode = b'\xaa'
 origNode = b'\xab'
-noSatAck = b'\xbb' #  This could be changed with a flag, learn how to do this :). Maybe look at send_with_ack in library to see how to edit flags
-yesSatAck = b'xaa'
+noSatAck = b'\x00' #  This could be changed with a flag, learn how to do this :). Maybe look at send_with_ack in library to see how to edit flags
+yesSatAck = b'\xaa'
 
 #  finalMessage = input("What do you want to tell the node?: ")
 finalMessage = finalNode
@@ -49,7 +49,7 @@ while True:
     #  all again
     print("Sending message out to all nodes")
     count += 1
-    radio.send(finalMessage, identifier = count, destination=255, keep_listening=True)
+    radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
 
     # adding ID to seen, mainly to check for ack
     seendID[count] = count #  play around with bytearray
@@ -57,15 +57,15 @@ while True:
     response = radio.receive(keep_listening=True, with_header=True, timeout=10)
 
     if response is not None:
-        print("Received (raw header):", [hex(x) for x in response[0:4]])
+        #print("Received (raw header):", [hex(x) for x in response[0:4]])
         print("Received (raw payload): {0}".format(response[4:]))
-        print("Received RSSI: {0}".format(radio.last_rssi))
+        #print("Received RSSI: {0}".format(radio.last_rssi))
 
-        for ID in seendID: # TODO: check that if byte can equal number. Like if 1 == 0x01
-            #ID = (ID) & 0xFF # this is how radio library changes number to byte(?). Might not be necessary. Look into if its not working
-            if response[2:3] == ID: # we have seen this message
+        for ID in seendID:
+            if response[2] == ID: # we have seen this message
                 if response[6:7] == yesSatAck: # its our ack!
                     print("signal was acknowledged by radio")
+
 
     else:
         print("No ack in 10 seconds")
