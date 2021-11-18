@@ -54,11 +54,11 @@ while True:
     # adding ID to seen, mainly to check for ack
     seendID[count] = count #  play around with bytearray
 
-    response = radioreceive(keep_listening=True, with_header=True, timeout=10)
+    response = radio.receive(keep_listening=True, with_header=True, timeout=10)
 
     if response is not None:
-        print("Received (raw header):", [hex(x) for x in packet[0:4]])
-        print("Received (raw payload): {0}".format(packet[4:]))
+        print("Received (raw header):", [hex(x) for x in response[0:4]])
+        print("Received (raw payload): {0}".format(response[4:]))
         print("Received RSSI: {0}".format(radio.last_rssi))
 
         for ID in seendID: # TODO: check that if byte can equal number. Like if 1 == 0x01
