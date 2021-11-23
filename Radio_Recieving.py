@@ -27,6 +27,7 @@ radio.destination = 255  # send to all
 # For ID tracking
 count = 0
 seendID = bytearray(256)
+loop = 0
 
 finalNode = b'\xab' # Destination radio
 origNode = b'\xaa'# Current radio. Changes depending on the radio
@@ -40,6 +41,7 @@ while True:
 
     # Wait to receive signal
     response = radio.receive(keep_listening=True, with_header=True, timeout=None)
+    seen = False # reset check
 
     if response is not None:
         print("Received (raw header):", [hex(x) for x in response[0:4]])
@@ -48,11 +50,14 @@ while True:
         #print("Received (raw bytes): {0}".format(response))
 
         for ID in seendID:
-            if response[2:3] == ID:  # we have seen this message
+            if response[2] == ID:  # we have seen this message
                 seen = True
                 print("already seen this message")
 
         if not seen:
+            loop += 1
+            seendID[loop] = response[2]  # Track new ID
+
             if response[4:5] == origNode:
                 print("meant for this!")
 
@@ -63,5 +68,3 @@ while True:
                 print(count)
 
                 radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
-
-
