@@ -56,6 +56,11 @@ while True:
 
         if not seen:
             loop += 1
+
+            # Temporary solution for when loop is greater than a byteArray
+            if loop == 256:
+                loop = 0
+
             seendID[loop] = response[2]  # Track new ID
 
             if response[4:5] == origNode:

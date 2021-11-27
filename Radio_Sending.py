@@ -52,6 +52,11 @@ while True:
 
     print("Sending message out to all nodes")
     count += 1
+
+    # Temporary solution for when count is greater than a byte
+    if count == 256:
+        count = 0
+
     radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
 
     # adding ID to seen
