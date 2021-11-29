@@ -22,6 +22,8 @@ radio = adafruit_rfm9x.RFM9x(spi, cs, reset, 433.0)
 radio.enable_crc = True
 radio.node = 255  # accept all
 radio.destination = 255  # send to all
+# 5-23, 13 is default. Power of radio signal
+radio.tx_power = 5
 ####  Initialization End #####
 
 # For ID tracking
@@ -29,19 +31,22 @@ count = 0
 seendID = bytearray(256)
 loop = 0
 
-finalNode = b'\xab' # Destination radio
-origNode = b'\xaa'# Current radio. Changes depending on the radio
+finalNode = b'\xff' # Destination radio
+origNode = b'\xbb'# Current radio. Changes depending on the radio
 
 # Used for acknowledging a received signal
 noSatAck = b'\x00'
 yesSatAck = b'\xaa'
-seen = False
+
+# Used for acknowledging whether signal was received by a relay
+noRelay = b'\x00'
+yesRelay = b'\xaa'
 
 while True:
 
     # Wait to receive signal
     response = radio.receive(keep_listening=True, with_header=True, timeout=None)
-    seen = False # reset check
+    seen = False
 
     if response is not None:
         print("Received (raw header):", [hex(x) for x in response[0:4]])
@@ -54,22 +59,40 @@ while True:
                 seen = True
                 print("already seen this message")
 
+        if seen and response[6:7] == yesSatAck:
+            print("Re-relaying the message because its an acknowledgment")
+
+            finalMessage = response[4:7] + yesRelay
+            print(finalMessage)
+
+            radio.send(finalMessage, identifier=messageID, destination=255, keep_listening=True)
+
         if not seen:
             loop += 1
-
             # Temporary solution for when loop is greater than a byteArray
             if loop == 256:
                 loop = 0
 
-            seendID[loop] = response[2]  # Track new ID
+            messageID = response[2]  # send back with same ID
+            seendID[loop] = messageID  # Track new ID
 
             if response[4:5] == origNode:
-                print("meant for this!")
+                print("Meant for this!")
 
                 # Build new message to send back
-                finalMessage = finalNode + origNode + yesSatAck
-                count = response[2]  # send back with same ID
-                print("Sending ack back")
-                print(count)
+                finalMessage = finalNode + origNode + yesSatAck + response[7:8]
 
-                radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
+                print("Sending ack back")
+                print(messageID)
+
+                radio.send(finalMessage, identifier=messageID, destination=255, keep_listening=True)
+
+            else:
+                print("Not meant for this")
+                print("Re-relaying the message")
+
+                finalMessage = response[4:7] + yesRelay
+                print(finalMessage)
+
+                radio.send(finalMessage, identifier=messageID, destination=255, keep_listening=True)
+
