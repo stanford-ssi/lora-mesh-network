@@ -54,6 +54,8 @@ while True:
         #print("Received (raw payload): {0}".format(response[4:]))
         #print("Received (raw bytes): {0}".format(response))
 
+        messageID = response[2]  # track ID
+
         for ID in seendID:
             if response[2] == ID:  # we have seen this message
                 seen = True
@@ -67,13 +69,13 @@ while True:
 
             radio.send(finalMessage, identifier=messageID, destination=255, keep_listening=True)
 
-        if not seen:
+        elif not seen:
+
             loop += 1
             # Temporary solution for when loop is greater than a byteArray
             if loop == 256:
                 loop = 0
 
-            messageID = response[2]  # send back with same ID
             seendID[loop] = messageID  # Track new ID
 
             if response[4:5] == origNode:
@@ -91,6 +93,7 @@ while True:
                 print("Not meant for this")
                 print("Re-relaying the message")
 
+                #build new message to send back
                 finalMessage = response[4:7] + yesRelay
                 print(finalMessage)
 
