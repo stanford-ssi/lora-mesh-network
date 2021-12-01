@@ -65,12 +65,12 @@ while True:
         count = 0
 
     radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
-    listenAgain = True;
+    listenAgain = True
 
     # adding ID to seen
     seendID[count] = count
 
-    while listenAgain;
+    while listenAgain:
         # wait for response for 3 seconds
         response = radio.receive(keep_listening=True, with_header=True, timeout=3)
 
