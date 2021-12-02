@@ -29,7 +29,7 @@ radio.tx_power = 5
 
 
 # For ID tracking
-count = 0
+count = 1
 seendID = bytearray(256)
 
 #  finalNode = input("Node destination: ")
@@ -39,11 +39,11 @@ origNode = b'\xaa'  # Current radio. Changes depending on the radio
 # This could be changed with a flag
 # Used for acknowledging a received signal
 noSatAck = b'\x00'
-yesSatAck = b'\xaa'
+yesSatAck = origNode
 
 # Used for knowing whether signal was received by a relay
 noRelay = b'\x00'
-yesRelay = b'\xaa'
+yesRelay = origNode
 
 # Building message to send out
 #  finalMessage = input("What do you want to tell the node?: ")
@@ -60,9 +60,12 @@ while True:
     print("Sending message out to all nodes")
     count += 1
 
+
     # Temporary solution for when count is greater than a byte
     if count == 256:
-        count = 0
+        count = 1
+        seendID = bytearray(256)
+
 
     radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
     listenAgain = True
@@ -73,21 +76,22 @@ while True:
     while listenAgain:
         # wait for response for 3 seconds
         response = radio.receive(keep_listening=True, with_header=True, timeout=3)
+        listenAgain = False
 
         if response is not None:
-            # print("Received (raw header):", [hex(x) for x in response[0:4]])
+            print("Received (raw header):", [hex(x) for x in response[0:4]])
             print("Received (raw payload): {0}".format(response[4:]))
             print("Received RSSI: {0}".format(radio.last_rssi))
 
             for ID in seendID:
                 if response[2] == ID:  # we have seen this message. We use single numbers to access the int value of the byte
-                    if response[6:7] == yesSatAck and response[7:8] == yesRelay:
+                    if response[6:7] != noSatAck and response[7:8] != noRelay:
                         print("Signal was acknowledged by radio through a relay")
                         listenAgain = False
-                    elif response[6:7] == yesSatAck:  # its our ack! We use number:number to access the string of the byte
+                    elif response[6:7] != noSatAck:  # its our ack! We use number:number to access the string of the byte
                         print("signal was acknowledged by radio directly")
                         listenAgain = False
-                    elif response[7:8] == yesRelay:
+                    elif response[7:8] != noRelay:
                         print("Messaged was relayed, waiting a second time")
                         listenAgain = True
                     else:
@@ -96,4 +100,4 @@ while True:
         else:
             print("No response in 3 seconds")
 
-    time.sleep(1)
+    time.sleep(2)

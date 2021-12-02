@@ -28,24 +28,24 @@ radio.tx_power = 5
 
 # For ID tracking
 count = 0
-seendID = bytearray(256)
-loop = 0
+seendID = bytearray(200)
+loop = 1
 
 finalNode = b'\xff' # Destination radio
-origNode = b'\xbb'# Current radio. Changes depending on the radio
+origNode = b'\xcc'# Current radio. Changes depending on the radio
 
 # Used for acknowledging a received signal
 noSatAck = b'\x00'
-yesSatAck = b'\xaa'
+yesSatAck = origNode
 
 # Used for acknowledging whether signal was received by a relay
 noRelay = b'\x00'
-yesRelay = b'\xaa'
+yesRelay = origNode
 
 while True:
 
     # Wait to receive signal
-    response = radio.receive(keep_listening=True, with_header=True, timeout=None)
+    response = radio.receive(keep_listening=True, with_header=True, timeout=1)
     seen = False
 
     if response is not None:
@@ -57,11 +57,11 @@ while True:
         messageID = response[2]  # track ID
 
         for ID in seendID:
-            if response[2] == ID:  # we have seen this message
+            if messageID == ID:  # we have seen this message
                 seen = True
                 print("already seen this message")
 
-        if seen and response[6:7] == yesSatAck:
+        if seen and response[6:7] != noSatAck:
             print("Re-relaying the message because its an acknowledgment")
 
             finalMessage = response[4:7] + yesRelay
@@ -73,8 +73,11 @@ while True:
 
             loop += 1
             # Temporary solution for when loop is greater than a byteArray
-            if loop == 256:
+            if loop == 200:
                 loop = 0
+                seendID = bytearray(256)
+
+            print(loop)
 
             seendID[loop] = messageID  # Track new ID
 
