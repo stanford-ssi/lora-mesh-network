@@ -24,19 +24,17 @@ radio.enable_crc = True
 radio.node = 255  # accept all
 radio.destination = 255  # send to all
 # 5-23, 13 is default. Power of radio signal
-radio.tx_power = 5
+radio.tx_power = 13
 ####  Initialization End #####
 
-
 # For ID tracking
-count = 1
+count = 0
 seendID = bytearray(256)
 
 #  finalNode = input("Node destination: ")
 finalNode = b'\xcc'  # Destination radio
 origNode = b'\xaa'  # Current radio. Changes depending on the radio
 
-# This could be changed with a flag
 # Used for acknowledging a received signal
 noSatAck = b'\x00'
 yesSatAck = origNode
@@ -46,7 +44,6 @@ noRelay = b'\x00'
 yesRelay = origNode
 
 # Building message to send out
-#  finalMessage = input("What do you want to tell the node?: ")
 finalMessage = finalNode
 finalMessage += origNode
 finalMessage += noSatAck
@@ -61,14 +58,15 @@ while True:
     count += 1
 
 
-    # Temporary solution for when count is greater than a byte
+    # For when count is greater than a byte
     if count == 256:
         count = 1
         seendID = bytearray(256)
 
 
-    radio.send(finalMessage, identifier=count, destination=255, keep_listening=True)
+    radio.send(finalMessage, identifier=count, keep_listening=True)
     listenAgain = True
+    print(count)
 
     # adding ID to seen
     seendID[count] = count
@@ -98,6 +96,13 @@ while True:
                         listenAgain = False
 
         else:
+            ########
+            # Note for debugging using RadioHead. radio.receive will return None
+            # When it gets a signal that wasn't meant for it when it only accepts
+            # signals that are meant for it. This only matters if you are using RadioHead
+            # In that case you would add a listenAgain = True below the print. It will have
+            # to connect right away or you will be stuck in an infinite loop.
+            ########
             print("No response in 3 seconds")
 
     time.sleep(2)
