@@ -1,6 +1,7 @@
 import board
 import busio
 import digitalio
+import time
 
 import adafruit_rfm9x
 
@@ -42,32 +43,11 @@ yesSatAck = origNode
 
 while True:
     response = radio.receive(keep_listening=True, with_header=True, timeout=1)
-    seen=False
-    
+    seen = False
+
     if response is not None:
-        messageID = response[2]
-        
-        for ID in seendID:
-            if messageID == ID:
-                seen = True
-                print("already seen this message")
-                
-    
-    if not seen:
-        if response[4:5] == origNode:
-            print("Radio 2 recieved response")
-            finalMessage = response[5:6] + response[4:5] + yesSatAck + response[7:8]  
-            radio.send(finalMessage, identifier=messageID, keep_listening=True)
-            
-        else:
-            print("Not meant for this")
-            print("Re-relaying the message")
+        finalMessage = response[4:]
+        radio.send(finalMessage, keep_listening=True)
 
-            #build new message to send back
-            finalMessage = response[4:7] + yesRelay
-            print(finalMessage)
-
-            radio.send(finalMessage, identifier=messageID, keep_listening=True)
-            
 
 

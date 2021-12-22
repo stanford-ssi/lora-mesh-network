@@ -1,6 +1,7 @@
 import board
 import busio
 import digitalio
+import time
 
 import adafruit_rfm9x
 
@@ -28,10 +29,6 @@ radio.tx_power = 13
 
 ################################################
 
-# For ID tracking
-count = 0
-seendID = bytearray(256)
-
 #  finalNode = input("Node destination: ")
 finalNode = b'\xcc'  # Destination radio
 origNode = b'\xaa'  # Current radio. Changes depending on the radio
@@ -45,34 +42,29 @@ finalMessage = finalNode
 finalMessage += origNode
 print(finalMessage)
 
-
-#transmits a signal
+# transmits a signal
 while True:
-    start = time.perf_counter()
+    start = time.monotonic_ns()
     print("Start Ranging")
 
-    radio.send(finalMessage, identifier=count, keep_listening=True)
+    radio.send(finalMessage, keep_listening=True)
     listenAgain = True
 
     while listenAgain:
         response = radio.receive(keep_listening=True, with_header=True, timeout=3)
-        listenAgain=False
+        listenAgain = False
 
         if response is not None:
+            # receives a repsonse an uses a timer to measure how long the exchange took
+            stop = time.monotonic_ns()
+
             LED.value = True
             print("Received signal!")
-
-            for ID in seendID:
-                if response[2] == ID:  # we have seen this message. We use single numbers to access the int value of the byte
-                    if response[6:7] != noSatAck: # its our ack! We use number:number to access the string of the byte
-                        print("signal was acknowledged by radio directly")
-                        listenAgain = False
-                    else:
-                        listenAgain = False
+            print(start - stop)
         else:
             LED.value = False
             print("No signal in 3 seconds")
 
-#receives a repsonse an uses a timer to measure how long the exchange took
-stop = time.perf_counter()
-print(start - stop)
+    time.sleep(1)
+
+
